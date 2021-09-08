@@ -2,7 +2,6 @@
 bin/
 core
 
-Samples/UnifiedMemoryPerf/UnifiedMemoryPerf
 Samples/conjugateGradientCudaGraphs/conjugateGradientCudaGraphs
 Samples/conjugateGradientMultiBlockCG/conjugateGradientMultiBlockCG
 Samples/conjugateGradientMultiDeviceCG/conjugateGradientMultiDeviceCG
@@ -10,16 +9,17 @@ Samples/cudaTensorCoreGemm/cudaTensorCoreGemm
 Samples/deviceQuery/deviceQuery
 Samples/matrixMul/matrixMul
 Samples/matrixMulDrv/data/
-Samples/matrixMulDrv/matrixMulDrv
 Samples/matrixMulDrv/matrixMul_kernel64.ptx
-Samples/multi_context_interop/
+Samples/matrixMulDrv/matrixMulDrv
+Samples/multi_context_interop/multi_context_interop
 Samples/p2pBandwidthLatencyTest/p2pBandwidthLatencyTest
 Samples/shfl_scan/shfl_scan
 Samples/simpleCUBLAS/simpleCUBLAS
 Samples/simpleCUBLASXT/simpleCUBLASXT
-Samples/simpleCUFFT/simpleCUFFT
 Samples/simpleCudaGraphs/simpleCudaGraphs
+Samples/simpleCUFFT/simpleCUFFT
 Samples/simpleVoteIntrinsics/simpleVoteIntrinsics
 Samples/systemWideAtomics/systemWideAtomics
+Samples/UnifiedMemoryPerf/UnifiedMemoryPerf
 Samples/vectorAdd_nvrtc/vectorAdd_nvrtc
 Samples/warpAggregatedAtomicsCG/warpAggregatedAtomicsCG
