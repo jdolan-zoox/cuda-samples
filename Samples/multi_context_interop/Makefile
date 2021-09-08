@@ -1,31 +1,4 @@
 ################################################################################
-# Copyright (c) 2018, NVIDIA CORPORATION. All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in the
-#    documentation and/or other materials provided with the distribution.
-#  * Neither the name of NVIDIA CORPORATION nor the names of its
-#    contributors may be used to endorse or promote products derived
-#    from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-################################################################################
 #
 # Makefile project only supported on Mac OS X and Linux Platforms)
 #
@@ -226,7 +199,7 @@ else
       BUILD_TYPE := release
 endif
 
-ALL_CCFLAGS :=
+ALL_CCFLAGS := -std=c++11
 ALL_CCFLAGS += $(NVCCFLAGS)
 ALL_CCFLAGS += $(EXTRA_NVCCFLAGS)
 ALL_CCFLAGS += $(addprefix -Xcompiler ,$(CCFLAGS))
@@ -234,25 +207,7 @@ ALL_CCFLAGS += $(addprefix -Xcompiler ,$(EXTRA_CCFLAGS))
 
 SAMPLE_ENABLED := 1
 
-# This sample is not supported on Mac OSX
-ifeq ($(TARGET_OS),darwin)
-  $(info >>> WARNING - simpleVulkan is not supported on Mac OSX - waiving sample <<<)
-  SAMPLE_ENABLED := 0
-endif
-
-# This sample is not supported on ARMv7
-ifeq ($(TARGET_ARCH),armv7l)
-  $(info >>> WARNING - simpleVulkan is not supported on ARMv7 - waiving sample <<<)
-  SAMPLE_ENABLED := 0
-endif
-
-# This sample is not supported on aarch64
-ifeq ($(TARGET_ARCH),aarch64)
-  $(info >>> WARNING - simpleVulkan is not supported on aarch64 - waiving sample <<<)
-  SAMPLE_ENABLED := 0
-endif
-
-ALL_LDFLAGS :=
+ALL_LDFLAGS := -lGLEW -lGL -lEGL
 ALL_LDFLAGS += $(ALL_CCFLAGS)
 ALL_LDFLAGS += $(addprefix -Xlinker ,$(LDFLAGS))
 ALL_LDFLAGS += $(addprefix -Xlinker ,$(EXTRA_LDFLAGS))
@@ -262,43 +217,6 @@ INCLUDES  := -I../../Common
 LIBRARIES :=
 
 ################################################################################
-
-# Makefile include to help find Vulkan SDK and dependencies
-include ./findvulkan.mk
-
-# Vulkan specific libraries
-ifeq ($(TARGET_OS),linux)
- LIBRARIES += -L $(VULKAN_SDK_PATH)/lib
- LIBRARIES += `pkg-config --static --libs glfw3` -lvulkan
- INCLUDES  += `pkg-config --static --cflags glfw3` -I$(VULKAN_SDK_PATH)/include
-endif
-
-#Detect if installed version of GCC supports C++11
-ifeq ($(TARGET_OS),linux)
-    empty :=
-    space := $(empty) $(empty)
-    GCCVERSIONSTRING := $(shell expr `$(HOST_COMPILER) -dumpversion`)
-#Create version number without "."
-    GCCVERSION := $(shell expr `echo $(GCCVERSIONSTRING)` | cut -f1 -d.)
-    GCCVERSION += $(shell expr `echo $(GCCVERSIONSTRING)` | cut -f2 -d.)
-    GCCVERSION += $(shell expr `echo $(GCCVERSIONSTRING)` | cut -f3 -d.)
-# Make sure the version number has at least 3 decimals
-    GCCVERSION += 00
-# Remove spaces from the version number
-    GCCVERSION := $(subst $(space),$(empty),$(GCCVERSION))
-# Crop the version number to 3 decimals.
-    GCCVERSION := $(shell expr `echo $(GCCVERSION)` | cut -b1-3)
-#$(warning $(GCCVERSION))
-
-    IS_MIN_VERSION := $(shell expr `echo $(GCCVERSION)` \>= 470)
-
-    ifeq ($(IS_MIN_VERSION), 1)
-        $(info >>> GCC Version is greater or equal to 4.7.0 <<<)
-    else
-        $(info >>> Waiving build. Minimum GCC version required for C++11 is 4.7.0 <<<)
-        SAMPLE_ENABLED := 0
-    endif
-endif
 
 # Gencode arguments
 SMS ?= 30 35 37 50 52 60 61 70 75
@@ -319,8 +237,6 @@ GENCODE_FLAGS += -gencode arch=compute_$(HIGHEST_SM),code=compute_$(HIGHEST_SM)
 endif
 endif
 
-ALL_CCFLAGS += --std=c++11
-
 ifeq ($(SAMPLE_ENABLED),0)
 EXEC ?= @echo "[@]"
 endif
@@ -330,9 +246,7 @@ endif
 # Target rules
 all: build
 
-build: simpleVulkan
-	$(EXEC) $(VULKAN_SDK_PATH)/bin/glslangValidator -V shader_sine.vert
-	$(EXEC) $(VULKAN_SDK_PATH)/bin/glslangValidator -V shader_sine.frag
+build: multi_context_interop
 
 check.deps:
 ifeq ($(SAMPLE_ENABLED),0)
@@ -341,21 +255,19 @@ else
 	@echo "Sample is ready - all dependencies have been met"
 endif
 
-vulkanCUDASinewave.o:vulkanCUDASinewave.cu
+multi_context_interop.o:multi_context_interop.cu
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
-simpleVulkan: vulkanCUDASinewave.o
+multi_context_interop: multi_context_interop.o
 	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
 	$(EXEC) mkdir -p ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
 	$(EXEC) cp $@ ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
 
 run: build
-	$(EXEC) ./simpleVulkan
+	$(EXEC) ./multi_context_interop
 
 clean:
-	rm -f simpleVulkan vulkanCUDASinewave.o
-	rm -rf ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)/simpleVulkan
-	rm -rf vert.spv
-	rm -rf frag.spv
+	rm -f multi_context_interop multi_context_interop.o
+	rm -rf ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)/multi_context_interop
 
 clobber: clean
